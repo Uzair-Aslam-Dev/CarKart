@@ -1,4 +1,4 @@
-import {validate} from '@middlewares/validateResults.mjs'
+
 
 const express = require('express');
 const cors = require('cors');
@@ -20,6 +20,6 @@ app.get("/",(req , res)=>{
 
     res.send("Welcome to homepage");
 })
-app.listen(port , ()=> {
-    console.log("Running on port 5000"); 
-})
+
+
+module.exports=app;
