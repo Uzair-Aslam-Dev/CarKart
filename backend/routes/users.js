@@ -1,7 +1,7 @@
 const express = require('express');
 const validate = require('../middlewares/validate');
 const {param , query , body, check} = require('express-validator');
-const {sign , login , getme} = require('../controllers/usercontroller')
+const {sign , login , getme , logout} = require('../controllers/usercontroller')
 const router = express.Router();
 
 const checks = [
@@ -23,6 +23,7 @@ router.get('/' , (req ,res )=> {
 
 router.get('/me' , getme);
 
+router.post('/logout' , logout);
 
 router.post('/Sign-up' , checks , validate , sign)
 router.post('/login' , loginchecks , validate , login)

@@ -1,12 +1,24 @@
+'use client'
 import React from 'react'
 import { Home, Edit, PlusCircle } from 'lucide-react'
-
+import { useRouter } from 'next/navigation'
 type ViewType = 'view' | 'edit' | 'create'
 interface dashprops{
   setview: React.Dispatch<React.SetStateAction<ViewType>>
 }
 
 function DashNav({setview} : dashprops) {
+  const router = useRouter();
+  const handlelogout = async () => {
+    const response = await fetch('http://localhost:5000/users/logout' , {method : 'POST' , credentials : 'include'})
+
+    if(response.ok) {
+      const result = await response;
+      console.log(result)
+      router.push('/login')
+
+    }
+  }
   return (
     <div className='h-full w-64 bg-linear-to-b from-blue-600 to-blue-800 text-white flex flex-col shadow-lg'>
       
@@ -38,7 +50,7 @@ function DashNav({setview} : dashprops) {
 
       {/* Bottom Section (optional) */}
       <div className='mt-auto px-4 py-4 border-t border-blue-400'>
-        <button className='w-full text-left px-4 py-2 rounded-lg hover:bg-red-500 transition-all duration-200'>
+        <button className='w-full text-left px-4 py-2 rounded-lg hover:bg-red-500 transition-all duration-200' onClick={handlelogout}>
           Logout
         </button>
       </div>

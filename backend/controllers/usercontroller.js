@@ -69,5 +69,15 @@ const getme = (req , res) => {
  }
 
 
+ const logout = async (req , res)=> {
+    req.session.destroy((err)=> {
+        if(err){
+            return res.status(500).json({message: 'Logout failed'});
+        }
 
-module.exports = {sign , login , getme};
+        res.clearCookie('connect.sid');
+        res.status(200).json({message: "Logout successfull"});
+    })
+ }
+
+module.exports = {sign , login , getme , logout};
