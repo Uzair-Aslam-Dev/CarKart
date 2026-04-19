@@ -2,14 +2,14 @@
 
 const express = require('express');
 const cors = require('cors');
-
+const session = require('express-session');
 
 const router  = require('./routes/index');
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 app.use(express.json());
-
+app.use(session({secret : 'vehicle_marketplace' , resave : false , saveUninitialized : false , cookie : {maxAge : 60*60* 1000 , httpOnly : true , secure : false}}))
 app.use(router);
 
 
