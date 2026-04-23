@@ -4,10 +4,11 @@ import { Home, Edit, PlusCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 type ViewType = 'view' | 'edit' | 'create'
 interface dashprops{
-  setview: React.Dispatch<React.SetStateAction<ViewType>>
+  setview: React.Dispatch<React.SetStateAction<ViewType>> ,
+ 
 }
 
-function DashNav({setview} : dashprops) {
+function DashNav({setview } : dashprops) {
   const router = useRouter();
   const handlelogout = async () => {
     const response = await fetch('http://localhost:5000/users/logout' , {method : 'POST' , credentials : 'include'})

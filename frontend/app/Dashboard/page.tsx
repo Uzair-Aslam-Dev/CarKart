@@ -11,6 +11,7 @@ function page() {
   const [view, setview] = useState<ViewType>('view');
   const [role, setRole] = useState<string | null>(null);
   const router = useRouter();
+ 
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -21,6 +22,7 @@ function page() {
       if (response.ok) {
         const data = await response.json();
         setRole(data.user.role);
+        
       } else {
         router.push('/login');  
       }
@@ -35,7 +37,7 @@ function page() {
     <div className='flex w-full h-screen'>
       {role === 'seller' && (
         <>
-          <DashNav setview={setview} />
+          <DashNav setview={setview}  />
           <div className='flex-1 bg-gray-100 p-4'>
             {view === 'view' && <h1>Viewing Ads</h1>}
             {view === 'edit' && <h1>Editing Ad</h1>}
