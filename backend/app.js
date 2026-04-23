@@ -1,5 +1,3 @@
-
-
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
@@ -19,13 +17,13 @@ const port = process.env.PORT || 5000;
 
 app.get("/",(req , res)=>{
     console.log("Welcome to home page");
-
     res.send("Welcome to homepage");
-})
+});
 
-    const db = require('./config/db');
-    db.query('SELECT 1')
-        .then(() => console.log('Database connected successfully'))
-        .catch((err) => console.log('Database connection failed:', err.message));
+const db = require('./config/db');
+
+db.query('SELECT 1')
+    .then(() => console.log('Database connected successfully'))
+    .catch((err) => console.log('Database connection failed:', err.message));
 
 module.exports=app;

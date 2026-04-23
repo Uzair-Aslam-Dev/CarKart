@@ -13,18 +13,18 @@ const checks = [
     body('role').notEmpty().withMessage('Select a role'),
 ];
 
-const loginchecks = [ body('username').notEmpty().withMessage("Enter your user name").trim(),
+const loginchecks = [ 
+    body('username').notEmpty().withMessage("Enter your user name").trim(),
     body('password').notEmpty().withMessage("Enter password").isLength({min: 2 , max : 24}).withMessage("Password must be 2–24 characters")
 ]
+
 router.get('/' , (req ,res )=> {
-    
     res.status(200).send({name: 'Abdullah'});
 })
 
 router.get('/me' , getme);
-
+router.post('/Sign-up' , checks , validate , sign);
+router.post('/login' , loginchecks , validate , login);
 router.post('/logout' , logout);
 
-router.post('/Sign-up' , checks , validate , sign)
-router.post('/login' , loginchecks , validate , login)
 module.exports = router;
