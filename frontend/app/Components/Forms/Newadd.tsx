@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import {
   Car, Calendar, Gauge, MapPin, Palette,
   FileText, CircleCheck, CircleX, Info,
-  Upload, ChevronDown, ArrowRight
+  Upload, ChevronDown, ArrowRight , CircleDollarSign
 } from 'lucide-react'
 
 type FormDataType = {
@@ -17,6 +17,7 @@ type FormDataType = {
   status: string
   color: string
   description: string
+  price : string
   images: File[]       // ✅ multiple files
 }
 
@@ -57,7 +58,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 export default function NewAdd() {
   const [formData, setFormData] = useState<FormDataType>({
     brand: '', model: '', year: '', mileage: '',
-    condition: '', city: '', status: '',
+    condition: '', city: '', status: '', price : '' ,
     color: '', description: '', images: [],
   })
 
@@ -72,18 +73,23 @@ export default function NewAdd() {
       setError('Please upload at least one image');
       return;
     }
+       
+  if (isNaN(Number(formData.price)) || formData.price === '') {
+     setError('Please enter a valid price');
+     return;
+   }
 
     const payload = new FormData();
 
-    // ✅ Keys exactly match what backend destructures
     payload.append('brand',       formData.brand);
     payload.append('model',       formData.model);
     payload.append('year',        formData.year);
     payload.append('mileage',     formData.mileage);
     payload.append('condition',   formData.condition);
-    payload.append('city',        formData.city);        // ✅ not 'location'
+    payload.append('city',        formData.city);      
     payload.append('status',      formData.status);
     payload.append('color',       formData.color);
+    payload.append('price' , formData.price);
     payload.append('description', formData.description);
 
     // ✅ Append all images under same key — matches upload.array('vehicle_images')
@@ -92,6 +98,8 @@ export default function NewAdd() {
     });
 
     try {
+
+      
       setLoading(true);
       const res = await fetch('http://localhost:5000/users/addvehicle', {
 //                                        
@@ -152,6 +160,10 @@ export default function NewAdd() {
                 <input type="number" placeholder="Year" className={inputCls}
                   onChange={e => setFormData({ ...formData, year: e.target.value })} />
               </Field>
+               <Field icon={CircleDollarSign}>
+                <input type='number' placeholder="Price" className={inputCls}
+                  onChange={e => setFormData({ ...formData, price: e.target.value })} />
+              </Field>
               <Field icon={Palette}>
                 <input type="text" placeholder="Color" className={inputCls}
                   onChange={e => setFormData({ ...formData, color: e.target.value })} />
@@ -183,8 +195,9 @@ export default function NewAdd() {
                 <select className={selectCls} defaultValue=""
                   onChange={e => setFormData({ ...formData, status: e.target.value })}>
                   <option value="" disabled>Status</option>
-                  <option value="available">Available</option>
+                  <option value="active">Available</option>
                   <option value="sold">Sold</option>
+                  <option value="inactive">Inactive</option>
                 </select>
               </SelectField>
             </div>

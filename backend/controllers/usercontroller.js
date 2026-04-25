@@ -93,16 +93,16 @@ const getme = (req , res) => {
  const addCar = async (req , res)=> {
     try {
         console.log(req.body);
-    const { brand , model , year ,  mileage , city , color , description , condition ,status  }   = req.body;
+    const { brand , model , year ,  mileage , city , color , description , condition ,status , price }   = req.body;
     if(!req.files || req.files.length == 0) {
         return res.status(400).json({error : 'Atleasst one image is required'});
     }
     const seller_id = req.session.user.id;
     const filenames = req.files.map(file => file.filename);
-   const query = `INSERT INTO vehicles(seller_id, brand, model, year, mileage, city, color, description, \`condition\`, \`status\`) 
-               VALUES (?,?,?,?,?,?,?,?,?,?)`;
+   const query = `INSERT INTO vehicles(seller_id, brand, model, year, mileage, city, color, description, \`condition\` ) 
+               VALUES (?,?,?,?,?,?,?,?,?);`;
 
-    await db.query(query, [seller_id, brand, model, year, mileage, city, color, description, condition, status]);
+    await db.query(query, [seller_id, brand, model, year, mileage, city, color, description, condition]);
 
     const query2 = 'select vehicle_id from vehicles where description = ? and seller_id= ? ;'
     const [rows] = await db.query(query2,[description , seller_id]);
@@ -115,6 +115,9 @@ const getme = (req , res) => {
         const imageValues = filenames.map(filename => [vehicle_id, filename]);
         const query3 = 'INSERT INTO vehicle_images(vehicle_id, image_url) VALUES ?';
         await db.query(query3, [imageValues]);
+
+        const query4 = 'insert into listings(vehicle_id , price , status) values (?,?,?);'
+        await db.query(query4 , [vehicle_id ,price,status])
 
         return res.status(200).json({ msg: 'Entry successful' });
 
