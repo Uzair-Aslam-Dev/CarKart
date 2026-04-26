@@ -7,6 +7,7 @@ import BuyerNav from '../Components/Sections/BuyerNav'
 import BuyerDashboard from '../Components/Sections/BuyerDashboard'
 import BuyerVehicles from '../Components/Sections/BuyerVehicles'
 import Newadd from '../Components/Forms/Newadd'
+import ViewAdds from '../Components/Sections/ViewAdds'
 
 // Separate view types (IMPORTANT)
 type SellerView = 'view' | 'edit' | 'create'
@@ -47,7 +48,7 @@ function Page() {
           <DashNav setview={setSellerView} />
 
           <div className='flex-1 bg-gray-100 p-4'>
-            {sellerView === 'view' && <h1>Viewing Ads</h1>}
+            {sellerView === 'view' && <ViewAdds/>}
             {sellerView === 'edit' && <h1>Editing Ad</h1>}
             {sellerView === 'create' && <Newadd />}
           </div>

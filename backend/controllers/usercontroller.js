@@ -133,4 +133,32 @@ const getme = (req , res) => {
     return res.status(500).json({ error: e.message });
   }
 }
-module.exports = {sign , login , getme , logout , addCar};
+
+const mylisting = async (req, res) => {
+    try {
+        const { id } = req.session.user;
+        console.log("seller_id:", id);
+
+        const query = `
+            SELECT 
+                (SELECT vi.image_url FROM vehicle_images vi WHERE vi.vehicle_id = v.vehicle_id LIMIT 1) as image_url,
+                v.brand, v.model, v.mileage, l.price, l.status, l.created_at 
+            FROM vehicles v 
+            INNER JOIN listings l ON v.vehicle_id = l.vehicle_id 
+            WHERE v.seller_id = ?
+        `
+        const [rows] = await db.query(query, [id]);
+        console.log("rows:", rows);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ msg: "No listing found" })
+        }
+
+        return res.json({ data: rows })
+
+    } catch (e) {
+        console.error('mylisting error:', e);
+        return res.status(500).json({ error: e.message })
+    }
+}
+module.exports = {sign , login , getme , logout , addCar ,mylisting};

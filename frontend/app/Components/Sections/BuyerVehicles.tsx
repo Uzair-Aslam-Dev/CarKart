@@ -12,6 +12,7 @@ function BuyerVehicles() {
       try {
         const res = await fetch('http://localhost:5000/vehicles')
         const data = await res.json()
+        console.log(data)
         console.log('image value:', data[0].image)  
         setVehicles(data)
       } catch (err) {
