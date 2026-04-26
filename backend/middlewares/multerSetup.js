@@ -35,8 +35,8 @@ const upload = multer({
         fields : 10 ,
         fieldNameSize : 100 ,
         fieldSize : 1024 * 1024 * 1,
-        headerPairs : 10 , 
-        parts : 15
+        headerPairs : 2000 , 
+        parts : 50
 
     }
 
