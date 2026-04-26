@@ -90,40 +90,47 @@ const getme = (req , res) => {
     })
  }
  
- const addCar = async (req , res)=> {
-    try {
-        console.log(req.body);
-    const { brand , model , year ,  mileage , city , color , description , condition ,status , price }   = req.body;
-    if(!req.files || req.files.length == 0) {
-        return res.status(400).json({error : 'Atleasst one image is required'});
+ const addCar = async (req, res) => {
+  try {
+    console.log(req.body);
+
+    const { brand, model, year, mileage, city, color, description, condition, status, price } = req.body;
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'At least one image is required' });
     }
+
     const seller_id = req.session.user.id;
     const filenames = req.files.map(file => file.filename);
-   const query = `INSERT INTO vehicles(seller_id, brand, model, year, mileage, city, color, description, \`condition\` ) 
-               VALUES (?,?,?,?,?,?,?,?,?);`;
 
-    await db.query(query, [seller_id, brand, model, year, mileage, city, color, description, condition]);
+    // ✅ Use insertId instead of re-querying by description
+    const [vehicleResult] = await db.query(
+      `INSERT INTO vehicles (seller_id, brand, model, year, mileage, city, color, description, \`condition\`) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [seller_id, brand, model, year, mileage, city, color, description, condition]
+    );
 
-    const query2 = 'select vehicle_id from vehicles where description = ? and seller_id= ? ;'
-    const [rows] = await db.query(query2,[description , seller_id]);
+    const vehicle_id = vehicleResult.insertId;
 
-    if(rows.length == 0) {
-        return res.status(400).json({error : 'Erro while inserting into db'});
+    // ✅ Insert images one by one — avoids the VALUES ? bulk syntax issue with mysql2
+    for (const filename of filenames) {
+      await db.query(
+        'INSERT INTO vehicle_images (vehicle_id, image_url) VALUES (?, ?)',
+        [vehicle_id, filename]
+      );
     }
 
-    const {vehicle_id} = rows[0];
-        const imageValues = filenames.map(filename => [vehicle_id, filename]);
-        const query3 = 'INSERT INTO vehicle_images(vehicle_id, image_url) VALUES ?';
-        await db.query(query3, [imageValues]);
+    // Insert listing
+    await db.query(
+      'INSERT INTO listings (vehicle_id, price, status) VALUES (?, ?, ?)',
+      [vehicle_id, price, status]
+    );
 
-        const query4 = 'insert into listings(vehicle_id , price , status) values (?,?,?);'
-        await db.query(query4 , [vehicle_id ,price,status])
+    return res.status(200).json({ msg: 'Entry successful' });
 
-        return res.status(200).json({ msg: 'Entry successful' });
-
-    } catch (e) {
-        console.error('addCar error:', e);
-        return res.status(500).json({ error: e.message });
-    }
- }
+  } catch (e) {
+    console.error('addCar error:', e);
+    return res.status(500).json({ error: e.message });
+  }
+}
 module.exports = {sign , login , getme , logout , addCar};

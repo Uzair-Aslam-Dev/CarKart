@@ -1,57 +1,75 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+
 import DashNav from '../Components/Sections/DashNav'
 import BuyerNav from '../Components/Sections/BuyerNav'
+import BuyerDashboard from '../Components/Sections/BuyerDashboard'
+import BuyerVehicles from '../Components/Sections/BuyerVehicles'
 import Newadd from '../Components/Forms/Newadd'
-import ViewAdds from '../Components/Sections/ViewAdds'
 
-type ViewType = 'view' | 'edit' | 'create'
+// Separate view types (IMPORTANT)
+type SellerView = 'view' | 'edit' | 'create'
+type BuyerView = 'Browse Vehicles' | 'Dashboard' | 'My Orders' | 'Wishlist'
 
-function page() {
-  const [view, setview] = useState<ViewType>('view');
-  const [role, setRole] = useState<string | null>(null);
-  const router = useRouter();
- 
+function Page() {
+  const [sellerView, setSellerView] = useState<SellerView>('view')
+  const [buyerView, setBuyerView] = useState<BuyerView>('Browse Vehicles')
+
+  const [role, setRole] = useState<string | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     const fetchUser = async () => {
       const response = await fetch("http://localhost:5000/users/me", {
-        credentials: 'include'  
-      });
+        credentials: 'include'
+      })
 
       if (response.ok) {
-        const data = await response.json();
-        setRole(data.user.role);
-        
+        const data = await response.json()
+        setRole(data.user.role)
       } else {
-        router.push('/login');  
+        router.push('/login')
       }
-    };
+    }
 
-    fetchUser();
-  }, []);
+    fetchUser()
+  }, [])
 
-  if (!role) return <div>Loading...</div>;   
+  if (!role) return <div>Loading...</div>
 
   return (
     <div className='flex w-full h-screen'>
+
+      {/* SELLER */}
       {role === 'seller' && (
         <>
-          <DashNav setview={setview}  />
+          <DashNav setview={setSellerView} />
+
           <div className='flex-1 bg-gray-100 p-4'>
-            {view === 'view' && <ViewAdds/>}
-            {view === 'edit' && <h1>Editing Ad</h1>}
-            {view === 'create' && <Newadd />}
+            {sellerView === 'view' && <h1>Viewing Ads</h1>}
+            {sellerView === 'edit' && <h1>Editing Ad</h1>}
+            {sellerView === 'create' && <Newadd />}
           </div>
         </>
       )}
 
+      {/* BUYER */}
       {role === 'buyer' && (
-        <BuyerNav />
+        <>
+          <BuyerNav setView={setBuyerView} />
+
+          <div className="flex-1 bg-gray-100 p-6 overflow-auto">
+            {buyerView === 'Browse Vehicles' && <BuyerVehicles />}
+            {buyerView === 'Dashboard' && <BuyerDashboard />}
+            {buyerView === 'My Orders' && <BuyerDashboard />}
+            {buyerView === 'Wishlist' && <h1>Wishlist Page</h1>}
+          </div>
+        </>
       )}
+  
     </div>
-  );
+  )
 }
 
-export default page;
+export default Page

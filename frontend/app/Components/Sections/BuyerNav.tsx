@@ -1,9 +1,19 @@
 import React, { useState } from 'react'
 
-function BuyerNav() {
-  const [active, setActive] = useState('Dashboard')
+function BuyerNav({setView}:any) {
+  const [active, setActive] = useState('Browse Vehicles')
 
   const mainNav = [
+    {
+      name: 'Browse Vehicles',
+      icon: (
+        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <rect x="3" y="11" width="18" height="5"/>
+        <circle cx="7" cy="18" r="2"/>
+        <circle cx="17" cy="18" r="2"/>
+        </svg>
+      )
+    },
     { name: 'Dashboard', icon: (
       <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
         <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
@@ -97,7 +107,10 @@ function BuyerNav() {
           return (
             <button
               key={item.name}
-              onClick={() => setActive(item.name)}
+              onClick={() => {
+                setActive(item.name)
+                setView(item.name)
+              }}
               style={{
                 width: '100%',
                 display: 'flex',
