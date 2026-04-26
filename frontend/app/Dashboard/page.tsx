@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import DashNav from '../Components/Sections/DashNav'
 import BuyerNav from '../Components/Sections/BuyerNav'
 import Newadd from '../Components/Forms/Newadd'
+import ViewAdds from '../Components/Sections/ViewAdds'
 
 type ViewType = 'view' | 'edit' | 'create'
 
@@ -39,7 +40,7 @@ function page() {
         <>
           <DashNav setview={setview}  />
           <div className='flex-1 bg-gray-100 p-4'>
-            {view === 'view' && <h1>Viewing Ads</h1>}
+            {view === 'view' && <ViewAdds/>}
             {view === 'edit' && <h1>Editing Ad</h1>}
             {view === 'create' && <Newadd />}
           </div>

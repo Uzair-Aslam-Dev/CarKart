@@ -1,7 +1,8 @@
 'use client'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Home, Edit, PlusCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+
 type ViewType = 'view' | 'edit' | 'create'
 interface dashprops{
   setview: React.Dispatch<React.SetStateAction<ViewType>> ,
@@ -9,13 +10,37 @@ interface dashprops{
 }
 
 function DashNav({setview } : dashprops) {
+  const [name , setname] = useState('');
   const router = useRouter();
+
+
+    useEffect(()=>{
+      const getuser = async()=> {
+        try{
+          const res = await fetch('http://localhost:5000/users/me' , {method : 'GET' , credentials: 'include'})
+          const data = await  res.json();
+          console.log(data)
+          setname(data.user.username);
+        }
+        catch(e) {
+          console.log(e);
+        }
+      
+      }
+
+      getuser();
+
+    } , [])
   const handlelogout = async () => {
     const response = await fetch('http://localhost:5000/users/logout' , {method : 'POST' , credentials : 'include'})
 
     if(response.ok) {
-      const result = await response;
-      console.log(result)
+      const result = await response.json();
+      
+   
+     
+    
+      
       router.push('/login')
 
     }
@@ -26,7 +51,7 @@ function DashNav({setview } : dashprops) {
       
       <div className='px-6 py-6 border-b border-blue-400'>
         <h1 className='text-xl font-semibold'>Dashboard</h1>
-        <p className='text-sm text-blue-200'>Welcome User</p>
+        <p className='text-sm text-blue-200'>Welcome <span className='text-white font-bold'>{name}</span></p>
       </div>
 
 
@@ -34,7 +59,7 @@ function DashNav({setview } : dashprops) {
 
         <button className='flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200' onClick={()=>{setview('view')}}>
           <Home size={18} />
-          <span>View My Ads</span>
+          <span>Dashboard</span>
         </button>
 
         <button className='flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200' onClick={()=>{setview('edit')}}>
