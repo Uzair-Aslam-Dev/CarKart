@@ -75,7 +75,7 @@ app.get("/api/vehicles/:id", async (req, res) => {
         v.color,
         v.description,
         v.condition,
-        v.status        AS vehicle_status,
+        l.status        AS vehicle_status,
         l.listing_id,
         l.price,
         l.status        AS listing_status,
@@ -90,7 +90,7 @@ app.get("/api/vehicles/:id", async (req, res) => {
       WHERE l.listing_id = ?`,
       [listingId]
     );
-
+    console.log(rows[0]);
     if (rows.length === 0) {
       return res.status(404).json({ message: "Listing not found" });
     }
