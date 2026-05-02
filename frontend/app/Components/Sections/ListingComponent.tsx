@@ -1,6 +1,8 @@
 import React from 'react'
 
 interface ListingProps {
+  listingid : number 
+  vehicleid : number
   img: string
   brand: string
   model: string
@@ -8,11 +10,36 @@ interface ListingProps {
   price: string
   status: string
   date: string
+  onRefresh : ()=>void 
 }
 
-function ListingComponent({ img, brand, model, mileage, price, status, date }: ListingProps) {
-  const isActive = status === 'Active'
+function ListingComponent({  listingid,
+  vehicleid,
+  img, 
+  brand, 
+  model, 
+  mileage, 
+  price, 
+  status, 
+  date , onRefresh}: ListingProps) {
+const isActive = status.toLowerCase() === 'active'
 
+    const  handledelete = async () => {
+        try{
+            const data = {listingid , vehicleid}
+            console.log(data);
+          const res  = await fetch ("http://localhost:5000/users/deletelisting" , {method : "DELETE" , headers: { "Content-Type": "application/json" }, credentials : "include" , body : JSON.stringify(data)})
+
+          if(res.ok) {
+            onRefresh();
+          }
+
+        }
+        catch(e) {
+
+        }
+
+    }
   return (
     <div style={{
       display: 'flex',
@@ -60,6 +87,11 @@ function ListingComponent({ img, brand, model, mileage, price, status, date }: L
       {/* Date */}
       <div style={{ fontSize: 13, color: '#888', minWidth: 90, textAlign: 'right' }}>
         {date}
+      </div>
+      <div className='flex gap-2'>
+        
+        <button className='px-4 py-1 bg-blue-500 text-white rounded-sm hover:bg-blue-300'>Edit</button>
+        <button className='px-4 py-1 bg-red-500 text-white rounded-sm hover:bg-red-300' onClick={handledelete}>Delete</button>
       </div>
     </div>
   )

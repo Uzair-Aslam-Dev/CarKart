@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
-
+const fs =require('fs').promises;
+const path = require('path')
 const sign = async (req, res) => {
     
     try {
@@ -140,7 +141,7 @@ const mylisting = async (req, res) => {
         console.log("seller_id:", id);
 
         const query = `
-            SELECT 
+            SELECT l.listing_id , v.vehicle_id,
                 (SELECT vi.image_url FROM vehicle_images vi WHERE vi.vehicle_id = v.vehicle_id LIMIT 1) as image_url,
                 v.brand, v.model, v.mileage, l.price, l.status, l.created_at 
             FROM vehicles v 
@@ -187,4 +188,39 @@ const sellerdashCard = async ( req , res) => {
 
         res.json({data});
 } 
-module.exports = {sign , login , getme , logout , addCar ,mylisting , sellerdashCard};
+
+const dellisting = async (req, res) => {
+  const { id } = req.session.user
+  const { listingid, vehicleid } = req.body
+
+  try {
+    
+    const [images] = await db.query(
+      'SELECT image_url FROM vehicle_images WHERE vehicle_id = ?',
+      [vehicleid]
+    )
+
+    
+    for (const item of images) {
+      const filepath = path.join(__dirname, '..' ,'uploads', item.image_url)
+      try {
+        await fs.unlink(filepath)
+        console.log(`Deleted file: ${item.image_url}`)
+      } catch (e) {
+        console.error(`Failed to delete file: ${item.image_url}`, e)
+      }
+    }
+
+  
+    await db.query('DELETE FROM vehicle_images WHERE vehicle_id = ?', [vehicleid])
+    await db.query('DELETE FROM listings WHERE listing_id = ?', [listingid])
+    await db.query('DELETE FROM vehicles WHERE vehicle_id = ?', [vehicleid])
+    
+
+    res.status(200).json({ msg: "Successful" })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ err: e.message })
+  }
+}
+module.exports = {sign , login , getme , logout , addCar ,mylisting , sellerdashCard , dellisting};

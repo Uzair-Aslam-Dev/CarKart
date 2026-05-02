@@ -5,6 +5,8 @@ import { Car, CircleCheck, Clock } from 'lucide-react'
 import ListingComponent from './ListingComponent'
 
 type Listing = {
+  listingid : number
+  vehicleid : number
   img: string
   brand: string
   model: string
@@ -15,6 +17,7 @@ type Listing = {
 }
 
 function ViewAdds() {
+  const [refresh, setRefresh] = useState(false)
   const [listingdata, setlisting] = useState<Listing[]>([])
   const [totalcar , settotalCar] = useState(0);
   const [soldcar , setsoldcar] = useState(0);
@@ -33,6 +36,8 @@ function ViewAdds() {
         if (res.ok) {
           const result = await res.json();
           const transformed = result.data.map((item: any) => ({
+            listingid : item.listing_id ,
+            vehicleid : item.vehicle_id ,
             img: `http://localhost:5000/uploads/${item.image_url}`,
             brand: item.brand,
             model: item.model,
@@ -73,7 +78,7 @@ function ViewAdds() {
 
     getlistingdata();
     getCardData();
-  }, [])
+  }, [refresh])
 
   return (
     <div className='w-full flex flex-col gap-6 p-6 bg-gray-100 min-h-screen'>
@@ -109,6 +114,8 @@ function ViewAdds() {
     : listingdata.map((item, index) => (
         <ListingComponent
           key={index}
+          listingid={item.listingid}
+          vehicleid={item.vehicleid}
           img={item.img}
           brand={item.brand}
           model={item.model}
@@ -116,6 +123,7 @@ function ViewAdds() {
           price={item.price}
           status={item.status}
           date={item.date}
+          onRefresh={()=>{setRefresh(prev => !prev)}}
         />
       ))
   }
