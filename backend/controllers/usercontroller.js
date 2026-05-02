@@ -161,4 +161,30 @@ const mylisting = async (req, res) => {
         return res.status(500).json({ error: e.message })
     }
 }
-module.exports = {sign , login , getme , logout , addCar ,mylisting};
+
+const sellerdashCard = async ( req , res) => {
+    const { id} = req.session.user;
+
+    const query = 'select count(*) as count from vehicles where seller_id = ? ;'
+    const [rows] = await db.query(query , [id]);
+    console.log("Total cars listed")
+        console.log(rows[0]);
+        const data = {count : rows[0].count};
+    
+        const query2 = 'select count(*) as soldc  from vehicles v inner join listings l on v.vehicle_id = l.vehicle_id where v.seller_id = ? and l.status = "sold" ;'
+        const [rows2] = await db.query(query2,[id]);
+
+        data.soldc = rows2[0].soldc;
+
+
+       
+        const query3 = 'select count(*) as pendc from vehicles v inner join listings l on v.vehicle_id = l.vehicle_id inner join orders o on o.listing_id = l.listing_id where v.seller_id = ? and o.status="pending"; '
+
+        const [rows3] = await db.query(query3,[id]); 
+        data.pendc = rows3[0].pendc;
+        console.log(data);
+
+
+        res.json({data});
+} 
+module.exports = {sign , login , getme , logout , addCar ,mylisting , sellerdashCard};

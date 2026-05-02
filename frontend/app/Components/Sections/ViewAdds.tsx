@@ -16,6 +16,9 @@ type Listing = {
 
 function ViewAdds() {
   const [listingdata, setlisting] = useState<Listing[]>([])
+  const [totalcar , settotalCar] = useState(0);
+  const [soldcar , setsoldcar] = useState(0);
+  const [pendreq ,setpendreq] = useState(0);
 
   useEffect(() => {
     const getlistingdata = async () => {
@@ -24,6 +27,8 @@ function ViewAdds() {
           method: 'GET',
           credentials: 'include'
         })
+
+        
 
         if (res.ok) {
           const result = await res.json();
@@ -47,7 +52,27 @@ function ViewAdds() {
       }
     }
 
+    const getCardData = async ()=> {
+      try {
+        const res = await fetch("http://localhost:5000/users/sellerdash", {method : "GET" , credentials : 'include'})
+
+        if(res.ok) {
+            const result = await res.json();
+            console.log(`Seller dashboard card data  ` );
+            console.log(result);
+            const{count , soldc , pendc} = result.data;
+            settotalCar(count);
+            setsoldcar(soldc);
+            setpendreq(pendc);
+        }
+      } catch(e) {
+        console.log(e);
+      }
+    } 
+
+
     getlistingdata();
+    getCardData();
   }, [])
 
   return (
@@ -64,17 +89,17 @@ function ViewAdds() {
         <ViewListingCard
           icon={<Car size={24} className="text-blue-600" />}
           text='Total Cars Listed'
-          numeric={24}
+          numeric={totalcar}
         />
         <ViewListingCard
           icon={<CircleCheck size={24} className="text-green-600" />}
           text='Cars Sold'
-          numeric={10}
+          numeric={soldcar}
         />
         <ViewListingCard
           icon={<Clock size={24} className="text-yellow-600" />}
           text='Pending Requests'
-          numeric={5}
+          numeric={pendreq}
         />
       </div>
 
