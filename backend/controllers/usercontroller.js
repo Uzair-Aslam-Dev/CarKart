@@ -104,7 +104,7 @@ const getme = (req , res) => {
     const seller_id = req.session.user.id;
     const filenames = req.files.map(file => file.filename);
 
-    // ✅ Use insertId instead of re-querying by description
+    //  Use insertId instead of re-querying by description
     const [vehicleResult] = await db.query(
       `INSERT INTO vehicles (seller_id, brand, model, year, mileage, city, color, description, \`condition\`) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -113,7 +113,7 @@ const getme = (req , res) => {
 
     const vehicle_id = vehicleResult.insertId;
 
-    // ✅ Insert images one by one — avoids the VALUES ? bulk syntax issue with mysql2
+    // Insert images one by one — avoids the VALUES ? bulk syntax issue with mysql2
     for (const filename of filenames) {
       await db.query(
         'INSERT INTO vehicle_images (vehicle_id, image_url) VALUES (?, ?)',
@@ -223,4 +223,69 @@ const dellisting = async (req, res) => {
     res.status(500).json({ err: e.message })
   }
 }
-module.exports = {sign , login , getme , logout , addCar ,mylisting , sellerdashCard , dellisting};
+
+const getBuyerDashboard = async (req,res) => {
+    const id = req.session.user.id;
+    try{
+        const [orders] = await query(
+            `SELECT 
+            o.order_id,
+            o.total_price,
+            o.status,
+            o.created_at,
+            v.brand,
+            v.model,
+            v.year,
+            (SELECT vi.image_url FROM vehicle_images vi WHERE vi.vehicle_id = v.vehicle_id LIMIT 1) as image_url
+            FROM orders o
+            JOIN listings l ON o.listing_id = l.listing_id
+            JOIN vehicles v ON l.vehicle_id = v.vehicle_id
+            WHERE o.buyer_id = ?
+            ORDER BY o.created_at DESC
+            LIMIT 5`,
+            [id]
+        )
+        
+        const [stats] = await query(
+            `SELECT
+            COUNT(*) as total_orders,
+            SUM(CASE WHEN status = 'pending'   THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+            SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as approved,
+            SUM(total_price) as total_spent
+            FROM orders
+            WHERE buyer_id = ?`,
+            [id]
+        )
+
+        res.json({orders,stats});
+    }
+    catch(err){
+        console.error('getBuyerDashboard error:', err)
+        res.status(500).json({ message: 'Server error' })
+    }
+} 
+
+
+const getBuyerOrders = async (req,res) => {
+    const id =  req.session.user.id;
+    try{
+        const [orders] = await query(
+            `Select order_id,total_price,status,created_at
+            From orders 
+            where buyer_id = ?
+            Order by created_at DESC`,
+            [id]
+        )
+
+        res.json({orders});
+    }
+    catch(err){
+        console.error('getBuyerOrder Error:',err);
+        res.status(500).json({message: 'Server Eror'})
+    }
+}
+
+
+
+module.exports = {sign , login , getme , logout , addCar ,mylisting , sellerdashCard , dellisting, getBuyerDashboard, getBuyerOrders};
