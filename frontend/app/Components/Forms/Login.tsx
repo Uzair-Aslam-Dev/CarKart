@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 export default function LoginForm() {
   const [username , setUsername] = useState('');
   const [password , setpassword] = useState('');
+  const [error, setError] = useState('');
   const router  = useRouter();
 
   const handlelogin = async () => {
@@ -29,11 +30,9 @@ export default function LoginForm() {
             
         } else {
             if (result.errors && result.errors.length > 0) {
-        
-       console.log("Validation error")
+              setError(result.errors[0].msg)
     } else {
-   
-        console.log("Login failed:", result.message);
+        setError(result.message || "Login Failed");
     }
         }
     } catch (e) {
@@ -103,7 +102,11 @@ export default function LoginForm() {
 
           {/* Remember Me */}
         
-
+          {error && (
+            <p className="text-red-500 text-sm mb-4">
+              {error}
+            </p>
+          )}
         
           <button
             type="submit"
