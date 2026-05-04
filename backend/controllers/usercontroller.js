@@ -227,7 +227,7 @@ const dellisting = async (req, res) => {
 const getBuyerDashboard = async (req,res) => {
     const id = req.session.user.id;
     try{
-        const [orders] = await query(
+        const [orders] = await db.query(
             `SELECT 
             o.order_id,
             o.total_price,
@@ -246,7 +246,7 @@ const getBuyerDashboard = async (req,res) => {
             [id]
         )
         
-        const [stats] = await query(
+        const [statsRows] = await db.query(
             `SELECT
             COUNT(*) as total_orders,
             SUM(CASE WHEN status = 'pending'   THEN 1 ELSE 0 END) as pending,
@@ -257,6 +257,14 @@ const getBuyerDashboard = async (req,res) => {
             WHERE buyer_id = ?`,
             [id]
         )
+
+        const stats = statsRows[0] || {
+            total_orders: 0,
+            pending: 0,
+            completed: 0,
+            approved: 0,
+            total_spent: 0
+        };
 
         res.json({orders,stats});
     }
@@ -270,7 +278,7 @@ const getBuyerDashboard = async (req,res) => {
 const getBuyerOrders = async (req,res) => {
     const id =  req.session.user.id;
     try{
-        const [orders] = await query(
+        const [orders] = await db.query(
             `Select order_id,total_price,status,created_at
             From orders 
             where buyer_id = ?
@@ -286,6 +294,136 @@ const getBuyerOrders = async (req,res) => {
     }
 }
 
+const orderVehicle = async (req,res) => {
+    try{
+        const buyer_id = req.session.user.id;
+        const {listingid} = req.body;
 
+        const [rows] = await db.query(`
+            SELECT l.price, l.status, v.seller_id
+            FROM listings l
+            JOIN vehicles v ON l.vehicle_id = v.vehicle_id
+            WHERE l.listing_id = ?
+        `, [listingid])
 
-module.exports = {sign , login , getme , logout , addCar ,mylisting , sellerdashCard , dellisting, getBuyerDashboard, getBuyerOrders};
+        const listing = rows[0]
+
+    const [existing] = await db.query(
+      'SELECT order_id FROM orders WHERE listing_id = ?',
+      [listingid]
+    )
+
+    if (existing.length > 0) {
+      return res.status(400).json({ error: 'Vehicle already ordered' })
+    }
+
+    const [result] = await db.query(`
+      INSERT INTO orders (buyer_id, listing_id, total_price)
+      VALUES (?, ?, ?)
+    `, [buyer_id, listingid, listing.price])
+
+    const order_id = result.insertId
+
+    await db.query(`
+      INSERT INTO order_history (order_id, status)
+      VALUES (?, 'pending')
+    `, [order_id])
+
+    await db.query(`
+      UPDATE listings
+      SET status = 'sold'
+      WHERE listing_id = ?
+    `, [listingid])
+
+    res.status(201).json({
+      message: 'Order placed successfully',
+      order_id,
+      status: 'pending', 
+    })
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Listing not found' })
+    }
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).json({ error: 'Failed to place order'});
+    }
+}
+
+const addtoWishlist = async (req, res) => {
+    const id = req.session.user?.id;
+    const { listing_id } = req.body;
+
+    if (!id) {
+        return res.status(401).json({ error: 'Unauthorized. Please log in.' });
+    }
+
+    if (!listing_id) {
+        return res.status(400).json({ error: 'Listing ID is required.' });
+    }
+
+    try {
+        const [existing] = await db.query(
+            'SELECT * FROM wishlist WHERE user_id = ? AND listing_id = ?',
+            [id, listing_id]
+        );
+
+        if (existing.length > 0) {
+            await db.query(
+                'DELETE FROM wishlist WHERE user_id = ? AND listing_id = ?',
+                [id, listing_id]
+            );
+            return res.status(200).json({ 
+                message: 'Removed from wishlist', 
+                isWishlisted: false 
+            });
+        } else {
+            await db.query(
+                'INSERT INTO wishlist (user_id, listing_id) VALUES (?, ?)',
+                [id, listing_id]
+            );
+            return res.status(201).json({ 
+                message: 'Added to wishlist', 
+                isWishlisted: true 
+            });
+        }
+    } catch (error) {
+        console.error('Wishlist DB Error:', error);
+        return res.status(500).json({ error: 'Database error occurred.' });
+    }
+};
+
+const getuserWishlist = async (req,res) => {
+    const id = req.session.user.id;
+
+    try{
+        const [items] = await db.query(
+            `SELECT 
+                w.wishlist_id,
+                w.listing_id,
+                v.vehicle_id,
+                v.brand,
+                v.model,
+                v.year,
+                v.city,
+                l.price,
+                (SELECT image_url FROM vehicle_images WHERE vehicle_id = v.vehicle_id LIMIT 1) as image_url
+            FROM wishlist w
+            JOIN listings l ON w.listing_id = l.listing_id
+            JOIN vehicles v ON l.vehicle_id = v.vehicle_id
+            WHERE w.user_id = ?
+            ORDER BY w.created_at DESC`,
+            [id]
+        );
+
+        res.status(200).json(items);
+    }
+    catch(err){
+        console.log('Fetch Wishlist Error:',err);
+        res.status(500).json({ error: 'Failed to retrieve wishlist items.' });
+    }
+     
+}
+
+module.exports = {sign , login , getme , logout , addCar ,mylisting , sellerdashCard , dellisting, getBuyerDashboard, getBuyerOrders, orderVehicle, addtoWishlist, getuserWishlist};

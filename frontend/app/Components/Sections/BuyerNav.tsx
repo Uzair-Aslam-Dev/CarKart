@@ -32,27 +32,25 @@ function BuyerNav({setView}:any) {
   ]
 
   const accountNav = [
-    { name: 'Profile Settings', icon: (
-      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-      </svg>
-    )},
-    { name: 'Notifications', icon: (
-      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
-      </svg>
-    )},
-    { name: 'Security', icon: (
-      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
-    )},
     { name: 'Logout', icon: (
       <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
         <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
       </svg>
     ), danger: true },
   ]
+
+  const handleLogout = async () => {
+    try {
+      await fetch('http://localhost:5000/users/logout', {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch (err) {
+      console.error('Logout failed', err)
+    } finally {
+      window.location.href = '/login'
+    }
+  }
 
   return (
     <div style={{
@@ -150,7 +148,7 @@ function BuyerNav({setView}:any) {
           return (
             <button
               key={item.name}
-              onClick={() => setActive(item.name)}
+              onClick={item.name === 'Logout' ? handleLogout : ()=>setActive(item.name)}
               style={{
                 width: '100%',
                 display: 'flex',

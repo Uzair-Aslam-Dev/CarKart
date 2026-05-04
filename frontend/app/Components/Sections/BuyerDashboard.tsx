@@ -77,7 +77,7 @@ function BuyerDashboard() {
         <StatCard title="Total Orders"   value={String(stats.total_orders)} />
         <StatCard title="Pending Orders" value={String(stats.pending)}      />
         <StatCard title="Completed"      value={String(stats.completed)}    />
-        <StatCard title="Total Spent"    value={`$${Number(stats.total_spent ?? 0).toFixed(2)}`} />
+        <StatCard title="Total Spent"    value={`PKR-${Number(stats.total_spent ?? 0).toFixed(2)}`} />
       </div>
 
       {/* RECENT ORDERS */}
@@ -92,7 +92,7 @@ function BuyerDashboard() {
               <div className="flex items-center gap-3">
                 {order.image_url ? (
                   <img
-                    src={order.image_url}
+                    src={`http://localhost:5000/uploads/${order.image_url}`}
                     alt="vehicle"
                     className="w-12 h-12 rounded-md object-cover"
                   />
@@ -114,7 +114,7 @@ function BuyerDashboard() {
 
               <div className="flex items-center gap-4">
                 <StatusBadge status={order.status} />
-                <p className="font-medium">${Number(order.total_price).toFixed(2)}</p>
+                <p className="font-medium">PKR-{Number(order.total_price).toFixed(2)}</p>
               </div>
             </div>
           ))}

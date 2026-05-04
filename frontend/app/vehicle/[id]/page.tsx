@@ -53,6 +53,9 @@ export default function VehicleDetailPage() {
   const [activeImage, setActiveImage] = useState(0)
   const [wishlisted, setWishlisted] = useState(false)
   const [contactOpen, setContactOpen] = useState(false)
+  const [ordering, setOrdering] = useState(false)
+  const [orderPlaced, setOrderPlaced] = useState(false)
+  const [wishlistLoading, setWishlistLoading] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -62,6 +65,17 @@ export default function VehicleDetailPage() {
         if (!res.ok) throw new Error('Vehicle not found')
         const data = await res.json()
         setVehicle(data)
+
+        const wRes = await fetch('http://localhost:5000/users/my-wishlist', {
+        credentials: 'include',
+      })
+      if (wRes.ok) {
+        const wishlist = await wRes.json()
+        const alreadyWishlisted = wishlist.some(
+          (item: { listing_id: number }) => item.listing_id === data.listing_id
+        )
+        setWishlisted(alreadyWishlisted)
+      }
       } catch (err: any) {
         setError(err.message || 'Failed to load vehicle')
       } finally {
@@ -70,6 +84,74 @@ export default function VehicleDetailPage() {
     }
     fetchVehicle()
   }, [id])
+
+  const handleOrder = async () => {
+  if (!vehicle) return
+
+  try {
+    setOrdering(true)
+
+    const res = await fetch('http://localhost:5000/users/orderVehicle', {
+      method: 'POST',
+      credentials: 'include', 
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        listingid: vehicle.listing_id, 
+      }),
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to place order')
+    }
+
+    setOrderPlaced(true)
+
+    setVehicle(prev =>
+      prev ? { ...prev, listing_status: 'sold' } : prev
+    )
+
+  } catch (err: any) {
+    alert(err.message || 'Something went wrong')
+  } finally {
+    setOrdering(false)
+  }
+}
+
+const handleWishlist = async () => {
+  if (!vehicle) return;
+
+  try {
+    setWishlistLoading(true);
+    
+    const res = await fetch('http://localhost:5000/users/wishlist', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        listing_id: vehicle.listing_id, 
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to update wishlist');
+    }
+
+    setWishlisted(!wishlisted);
+
+  } catch (err: any) {
+    alert(err.message || 'Something went wrong');
+  } finally {
+    setWishlistLoading(false);
+  }
+};
 
   const images = vehicle?.images?.length
     ? vehicle.images.map((img: string) => `http://localhost:5000/uploads/${img}`)
@@ -99,6 +181,7 @@ export default function VehicleDetailPage() {
         .thumb:hover       { border-color:#2563eb !important; }
         .back-btn:hover    { background:#e8f0fe !important; color:#2563eb !important; }
         .contact-btn:hover { background:#1d4ed8 !important; }
+        .order-btn:hover   { opacity:0.88 !important; }
         .wishlist-btn:hover{ background:#fff0f0 !important; }
       `}</style>
 
@@ -357,10 +440,41 @@ export default function VehicleDetailPage() {
                   {contactOpen ? 'Hide Contact' : 'Contact Seller'}
                 </button>
 
+                {/* Order Vehicle */}
+                <button
+                  className="order-btn"
+                  disabled={vehicle.listing_status !== 'active'}
+                  onClick={()=>{
+                    alert("Order has been Placed!");
+                    handleOrder();
+                  }}
+                  style={{
+                    width: '100%', padding: '14px',
+                    background: vehicle.listing_status === 'active'
+                      ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)'
+                      : '#e5e7eb',
+                    color: vehicle.listing_status === 'active' ? '#fff' : '#9ca3af',
+                    border: 'none', borderRadius: '12px',
+                    fontFamily: "'DM Sans', sans-serif", fontSize: '15px', fontWeight: '700',
+                    cursor: vehicle.listing_status === 'active' ? 'pointer' : 'not-allowed',
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', gap: '8px',
+                    transition: 'opacity 0.15s', marginBottom: '10px',
+                  }}
+                >
+                  <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <path d="M16 10a4 4 0 01-8 0"/>
+                  </svg>
+                  {vehicle.listing_status === 'active' ? 'Order Vehicle' : 'Not Available'}
+                </button>
+
                 {/* Wishlist */}
                 <button
                   className="wishlist-btn"
-                  onClick={() => setWishlisted(w => !w)}
+                  disabled={wishlistLoading}
+                  onClick={handleWishlist}
                   style={{
                     width: '100%', padding: '13px',
                     background: wishlisted ? '#fff0f0' : '#f8fafc',

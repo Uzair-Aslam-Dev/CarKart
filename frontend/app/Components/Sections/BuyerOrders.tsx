@@ -88,7 +88,7 @@ function BuyerOrders() {
                       })}
                     </td>
                     <td className="px-5 py-4 font-medium">
-                      ${Number(order.total_price).toFixed(2)}
+                      PKR-{Number(order.total_price).toFixed(2)}
                     </td>
                     <td className="px-5 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${BADGE_STYLES[order.status]}`}>

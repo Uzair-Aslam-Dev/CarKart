@@ -1,7 +1,7 @@
 const express = require('express');
 const validate = require('../middlewares/validate');
 const {param , query , body, check} = require('express-validator');
-const {sign , login , getme , logout , addCar , mylisting , sellerdashCard , dellisting, getBuyerDashboard, getBuyerOrders} = require('../controllers/usercontroller')
+const {sign , login , getme , logout , addCar , mylisting , sellerdashCard , dellisting, getBuyerDashboard, getBuyerOrders, orderVehicle, addtoWishlist,getuserWishlist} = require('../controllers/usercontroller')
 const validateSession  = require('../middlewares/sessionvalidate')
 
 const upload = require('../middlewares/multerSetup')
@@ -34,6 +34,9 @@ router.get('/sellerdash' , validateSession , sellerdashCard)
 router.delete('/deletelisting' , validateSession , dellisting)
 router.get('/dashboard',validateSession,getBuyerDashboard)
 router.get('/orders',validateSession,getBuyerOrders);
+router.post('/orderVehicle', validateSession, orderVehicle);
+router.post('/wishlist',validateSession, addtoWishlist);
+router.get('/my-wishlist',validateSession, getuserWishlist);
 
 router.post('/addvehicle' , validateSession, upload.array('vehicle_images',5), addCar );
 module.exports = router;

@@ -9,6 +9,7 @@ import BuyerVehicles from '../Components/Sections/BuyerVehicles'
 import Newadd from '../Components/Forms/Newadd'
 import ViewAdds from '../Components/Sections/ViewAdds'
 import BuyerOrders from '../Components/Sections/BuyerOrders'
+import BuyerWishlist from '../Components/Sections/BuyerWishlist'
 
 // Separate view types (IMPORTANT)
 type SellerView = 'view' | 'edit' | 'create'
@@ -65,7 +66,7 @@ function Page() {
             {buyerView === 'Browse Vehicles' && <BuyerVehicles />}
             {buyerView === 'Dashboard' && <BuyerDashboard />}
             {buyerView === 'My Orders' && <BuyerOrders />}
-            {buyerView === 'Wishlist' && <h1>Wishlist Page</h1>}
+            {buyerView === 'Wishlist' && <BuyerWishlist/>}
           </div>
         </>
       )}
