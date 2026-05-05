@@ -224,6 +224,71 @@ const dellisting = async (req, res) => {
   }
 }
 
+const editlisting = async (req, res) => {
+  const sellerId = req.session.user.id
+  const { listingid, vehicleid, brand, model, mileage, price, status } = req.body
+
+  if (!listingid || !vehicleid) {
+    return res.status(400).json({ message: 'Listing and vehicle IDs are required.' })
+  }
+
+  if (!brand || !model) {
+    return res.status(400).json({ message: 'Brand and model are required.' })
+  }
+
+  const parsedMileage = Number(mileage)
+  const parsedPrice = Number(price)
+  const normalizedStatus = String(status || '').toLowerCase()
+  const allowedStatuses = ['active', 'inactive', 'sold']
+
+  if (Number.isNaN(parsedMileage) || parsedMileage < 0) {
+    return res.status(400).json({ message: 'Mileage must be a valid non-negative number.' })
+  }
+
+  if (Number.isNaN(parsedPrice) || parsedPrice <= 0) {
+    return res.status(400).json({ message: 'Price must be a valid number greater than zero.' })
+  }
+
+  if (!allowedStatuses.includes(normalizedStatus)) {
+    return res.status(400).json({ message: 'Invalid status value.' })
+  }
+
+  try {
+    const [ownedVehicle] = await db.query(
+      'SELECT vehicle_id FROM vehicles WHERE vehicle_id = ? AND seller_id = ?',
+      [vehicleid, sellerId]
+    )
+
+    if (ownedVehicle.length === 0) {
+      return res.status(403).json({ message: 'You are not allowed to edit this listing.' })
+    }
+
+    const [ownedListing] = await db.query(
+      'SELECT listing_id FROM listings WHERE listing_id = ? AND vehicle_id = ?',
+      [listingid, vehicleid]
+    )
+
+    if (ownedListing.length === 0) {
+      return res.status(404).json({ message: 'Listing not found.' })
+    }
+
+    await db.query(
+      'UPDATE vehicles SET brand = ?, model = ?, mileage = ? WHERE vehicle_id = ?',
+      [brand.trim(), model.trim(), parsedMileage, vehicleid]
+    )
+
+    await db.query(
+      'UPDATE listings SET price = ?, status = ? WHERE listing_id = ?',
+      [parsedPrice, normalizedStatus, listingid]
+    )
+
+    return res.status(200).json({ message: 'Listing updated successfully.' })
+  } catch (e) {
+    console.error('editlisting error:', e)
+    return res.status(500).json({ message: 'Failed to update listing.', error: e.message })
+  }
+}
+
 const getBuyerDashboard = async (req,res) => {
     const id = req.session.user.id;
     try{
@@ -426,4 +491,4 @@ const getuserWishlist = async (req,res) => {
      
 }
 
-module.exports = {sign , login , getme , logout , addCar ,mylisting , sellerdashCard , dellisting, getBuyerDashboard, getBuyerOrders, orderVehicle, addtoWishlist, getuserWishlist};
+module.exports = {sign , login , getme , logout , addCar ,mylisting , sellerdashCard , dellisting, editlisting, getBuyerDashboard, getBuyerOrders, orderVehicle, addtoWishlist, getuserWishlist};

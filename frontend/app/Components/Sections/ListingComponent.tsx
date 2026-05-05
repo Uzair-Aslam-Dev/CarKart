@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
+import SellerEditListingModal from './seller_editlistingmodal'
 
 interface ListingProps {
   listingid : number 
@@ -9,6 +10,9 @@ interface ListingProps {
   mileage: string
   price: string
   status: string
+  rawMileage: number
+  rawPrice: number
+  rawStatus: string
   date: string
   onRefresh : ()=>void 
 }
@@ -21,7 +25,11 @@ function ListingComponent({  listingid,
   mileage, 
   price, 
   status, 
+  rawMileage,
+  rawPrice,
+  rawStatus,
   date , onRefresh}: ListingProps) {
+const [isEditOpen, setIsEditOpen] = useState(false)
 const isActive = status.toLowerCase() === 'active'
 
     const  handledelete = async () => {
@@ -90,9 +98,26 @@ const isActive = status.toLowerCase() === 'active'
       </div>
       <div className='flex gap-2'>
         
-        <button className='px-4 py-1 bg-blue-500 text-white rounded-sm hover:bg-blue-300'>Edit</button>
+        <button
+          className='px-4 py-1 bg-blue-500 text-white rounded-sm hover:bg-blue-300'
+          onClick={() => setIsEditOpen(true)}
+        >
+          Edit
+        </button>
         <button className='px-4 py-1 bg-red-500 text-white rounded-sm hover:bg-red-300' onClick={handledelete}>Delete</button>
       </div>
+      <SellerEditListingModal
+        isOpen={isEditOpen}
+        listingid={listingid}
+        vehicleid={vehicleid}
+        initialBrand={brand}
+        initialModel={model}
+        initialMileage={rawMileage}
+        initialPrice={rawPrice}
+        initialStatus={rawStatus}
+        onClose={() => setIsEditOpen(false)}
+        onUpdated={onRefresh}
+      />
     </div>
   )
 }

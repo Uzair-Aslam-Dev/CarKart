@@ -13,6 +13,9 @@ type Listing = {
   mileage: string
   price: string
   status: string
+  rawMileage: number
+  rawPrice: number
+  rawStatus: string
   date: string
 }
 
@@ -44,6 +47,9 @@ function ViewAdds() {
             mileage: `${Number(item.mileage).toLocaleString()} miles`,
             price: `Rs ${parseFloat(item.price).toLocaleString()}`,
             status: item.status.charAt(0).toUpperCase() + item.status.slice(1),
+            rawMileage: Number(item.mileage),
+            rawPrice: Number(item.price),
+            rawStatus: item.status,
             date: new Date(item.created_at).toLocaleDateString('en-US', {
               month: 'short', day: 'numeric', year: 'numeric'
             })
@@ -122,6 +128,9 @@ function ViewAdds() {
           mileage={item.mileage}
           price={item.price}
           status={item.status}
+          rawMileage={item.rawMileage}
+          rawPrice={item.rawPrice}
+          rawStatus={item.rawStatus}
           date={item.date}
           onRefresh={()=>{setRefresh(prev => !prev)}}
         />
