@@ -1,7 +1,25 @@
 const express = require('express');
 const validate = require('../middlewares/validate');
 const {param , query , body, check} = require('express-validator');
-const {sign , login , getme , logout , addCar , mylisting , sellerdashCard , dellisting, editlisting, getBuyerDashboard, getBuyerOrders, orderVehicle, addtoWishlist,getuserWishlist} = require('../controllers/usercontroller')
+const {
+  sign,
+  login,
+  getme,
+  logout,
+  addCar,
+  mylisting,
+  sellerdashCard,
+  dellisting,
+  editlisting,
+  resetPasswordByUsername,
+  getBuyerDashboard,
+  getBuyerOrders,
+  getSellerOrders,
+  updateSellerOrder,
+  orderVehicle,
+  addtoWishlist,
+  getuserWishlist,
+} = require('../controllers/usercontroller')
 const validateSession  = require('../middlewares/sessionvalidate')
 
 const upload = require('../middlewares/multerSetup')
@@ -21,6 +39,15 @@ const loginchecks = [
     body('password').notEmpty().withMessage("Enter password").isLength({min: 2 , max : 24}).withMessage("Password must be 2–24 characters")
 ]
 
+const resetPasswordByUsernameChecks = [
+  body('username').notEmpty().withMessage('Enter your username').trim(),
+  body('newPassword')
+    .notEmpty()
+    .withMessage('Enter a new password')
+    .isLength({ min: 2, max: 24 })
+    .withMessage('Password must be 2–24 characters'),
+]
+
 router.get('/' , (req ,res )=> {
     res.status(200).send({name: 'Abdullah'});
 })
@@ -29,8 +56,11 @@ router.get('/me' , validateSession, getme);
 router.post('/Sign-up' , checks , validate , sign);
 router.post('/login' , loginchecks , validate , login);
 router.post('/logout' , logout);
+router.post('/reset-password', resetPasswordByUsernameChecks, validate, resetPasswordByUsername);
 router.get('/mylistings', validateSession , mylisting )
 router.get('/sellerdash' , validateSession , sellerdashCard)
+router.get('/seller-orders', validateSession, getSellerOrders)
+router.patch('/seller-orders/:orderId', validateSession, updateSellerOrder)
 router.delete('/deletelisting' , validateSession , dellisting)
 router.put('/editlisting' , validateSession , editlisting)
 router.get('/dashboard',validateSession,getBuyerDashboard)

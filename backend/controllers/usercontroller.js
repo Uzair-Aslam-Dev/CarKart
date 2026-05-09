@@ -359,6 +359,174 @@ const getBuyerOrders = async (req,res) => {
     }
 }
 
+const requireSellerRole = (req, res) => {
+  const role = req.session.user?.role
+  if (role !== 'seller') {
+    res.status(403).json({ message: 'Seller access only.' })
+    return false
+  }
+  return true
+}
+
+const getSellerOrders = async (req, res) => {
+  if (!requireSellerRole(req, res)) return
+
+  const sellerId = req.session.user.id
+
+  try {
+    const [orders] = await db.query(
+      `
+      SELECT
+        o.order_id,
+        o.total_price,
+        o.status,
+        o.created_at,
+        o.listing_id,
+        o.buyer_id,
+        v.brand,
+        v.model,
+        v.year,
+        u.full_name AS buyer_name,
+        u.phone AS buyer_phone,
+        u.email AS buyer_email
+      FROM orders o
+      JOIN listings l ON o.listing_id = l.listing_id
+      JOIN vehicles v ON l.vehicle_id = v.vehicle_id
+      JOIN users u ON o.buyer_id = u.user_id
+      WHERE v.seller_id = ?
+      ORDER BY
+        CASE o.status
+          WHEN 'pending' THEN 0
+          WHEN 'confirmed' THEN 1
+          WHEN 'completed' THEN 2
+          ELSE 3
+        END,
+        o.created_at DESC
+    `,
+      [sellerId]
+    )
+
+    res.json({ orders })
+  } catch (err) {
+    console.error('getSellerOrders error:', err)
+    res.status(500).json({ message: 'Failed to fetch orders.' })
+  }
+}
+
+const updateSellerOrder = async (req, res) => {
+  if (!requireSellerRole(req, res)) return
+
+  const sellerId = req.session.user.id
+  const orderId = parseInt(req.params.orderId, 10)
+  const { action } = req.body
+
+  if (!orderId || Number.isNaN(orderId)) {
+    return res.status(400).json({ message: 'Valid order ID is required.' })
+  }
+
+  const allowedActions = ['approve', 'reject', 'complete']
+  if (!allowedActions.includes(action)) {
+    return res.status(400).json({
+      message: 'Invalid action. Use approve, reject, or complete.',
+    })
+  }
+
+  let conn
+  try {
+    conn = await db.getConnection()
+    await conn.beginTransaction()
+
+    const [rows] = await conn.query(
+      `
+      SELECT o.order_id, o.status AS order_status, o.listing_id
+      FROM orders o
+      JOIN listings l ON l.listing_id = o.listing_id
+      JOIN vehicles v ON v.vehicle_id = l.vehicle_id
+      WHERE o.order_id = ? AND v.seller_id = ?
+      FOR UPDATE
+    `,
+      [orderId, sellerId]
+    )
+
+    if (!rows.length) {
+      await conn.rollback()
+      return res.status(404).json({ message: 'Order not found.' })
+    }
+
+    const row = rows[0]
+    const current = row.order_status
+
+    if (action === 'approve') {
+      if (current !== 'pending') {
+        await conn.rollback()
+        return res.status(400).json({ message: 'Only pending orders can be approved.' })
+      }
+      await conn.query(
+        'UPDATE orders SET status = ? WHERE order_id = ?',
+        ['confirmed', orderId]
+      )
+      await conn.query(
+        'INSERT INTO order_history (order_id, status) VALUES (?, ?)',
+        [orderId, 'confirmed']
+      )
+    }
+
+    if (action === 'reject') {
+      if (current !== 'pending') {
+        await conn.rollback()
+        return res.status(400).json({ message: 'Only pending orders can be rejected.' })
+      }
+      await conn.query(
+        'UPDATE orders SET status = ? WHERE order_id = ?',
+        ['cancelled', orderId]
+      )
+      await conn.query(
+        'INSERT INTO order_history (order_id, status) VALUES (?, ?)',
+        [orderId, 'cancelled']
+      )
+      await conn.query(
+        'UPDATE listings SET status = ? WHERE listing_id = ?',
+        ['active', row.listing_id]
+      )
+    }
+
+    if (action === 'complete') {
+      if (current !== 'confirmed') {
+        await conn.rollback()
+        return res
+          .status(400)
+          .json({ message: 'Only approved orders can be marked complete.' })
+      }
+      await conn.query(
+        'UPDATE orders SET status = ? WHERE order_id = ?',
+        ['completed', orderId]
+      )
+      await conn.query(
+        'INSERT INTO order_history (order_id, status) VALUES (?, ?)',
+        [orderId, 'completed']
+      )
+    }
+
+    await conn.commit()
+    return res.status(200).json({
+      message: 'Order updated successfully.',
+      order_id: orderId,
+      status:
+        action === 'approve'
+          ? 'confirmed'
+          : action === 'reject'
+            ? 'cancelled'
+            : 'completed',
+    })
+  } catch (err) {
+    if (conn) await conn.rollback()
+    console.error('updateSellerOrder error:', err)
+    return res.status(500).json({ message: 'Failed to update order.' })
+  } finally {
+    if (conn) conn.release()
+  }
+}
+
 const orderVehicle = async (req,res) => {
     try{
         const buyer_id = req.session.user.id;
@@ -459,6 +627,40 @@ const addtoWishlist = async (req, res) => {
     }
 };
 
+const resetPasswordByUsername = async (req, res) => {
+  try {
+    const username = String(req.body.username || '').trim()
+    const newPassword = req.body.newPassword
+
+    const [rows] = await db.query(
+      'SELECT user_id FROM users WHERE username = ?',
+      [username]
+    )
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        message:
+          'No account found with that username. Enter the username you use to sign in.',
+      })
+    }
+
+    const userId = rows[0].user_id
+    const hashedpassword = await bcrypt.hash(newPassword, 10)
+
+    await db.query('UPDATE users SET password = ? WHERE user_id = ?', [
+      hashedpassword,
+      userId,
+    ])
+
+    return res.status(200).json({
+      message: 'Password updated successfully. You can sign in with your new password.',
+    })
+  } catch (e) {
+    console.error('resetPasswordByUsername error:', e)
+    return res.status(500).json({ message: 'Could not reset password.' })
+  }
+}
+
 const getuserWishlist = async (req,res) => {
     const id = req.session.user.id;
 
@@ -491,4 +693,22 @@ const getuserWishlist = async (req,res) => {
      
 }
 
-module.exports = {sign , login , getme , logout , addCar ,mylisting , sellerdashCard , dellisting, editlisting, getBuyerDashboard, getBuyerOrders, orderVehicle, addtoWishlist, getuserWishlist};
+module.exports = {
+  sign,
+  login,
+  getme,
+  logout,
+  addCar,
+  mylisting,
+  sellerdashCard,
+  dellisting,
+  editlisting,
+  resetPasswordByUsername,
+  getBuyerDashboard,
+  getBuyerOrders,
+  getSellerOrders,
+  updateSellerOrder,
+  orderVehicle,
+  addtoWishlist,
+  getuserWishlist,
+}

@@ -81,9 +81,12 @@ export default function LoginForm() {
               <label className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <span className="text-sm text-indigo-600 hover:text-indigo-700 cursor-pointer font-medium">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+              >
                 Forgot password?
-              </span>
+              </Link>
             </div>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -103,9 +106,11 @@ export default function LoginForm() {
           {/* Remember Me */}
         
           {error && (
-            <p className="text-red-500 text-sm mb-4">
+            <div className='w-full flex justify-center'>
+            <p className="text-red-600 text-sm mb-4 text-center bg-red-50 border border-red-300 px-4 py-2 rounded-lg">
               {error}
             </p>
+            </div>
           )}
         
           <button

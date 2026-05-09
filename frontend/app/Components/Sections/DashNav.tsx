@@ -1,9 +1,9 @@
 'use client'
 import React, { useEffect, useState } from 'react'
-import { Home, Edit, PlusCircle } from 'lucide-react'
+import { Home, Edit, PlusCircle, ClipboardList } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
-type ViewType = 'view' | 'edit' | 'create'
+type ViewType = 'view' | 'edit' | 'create' | 'orders'
 interface dashprops{
   setview: React.Dispatch<React.SetStateAction<ViewType>> ,
  
@@ -62,14 +62,16 @@ function DashNav({setview } : dashprops) {
           <span>Dashboard</span>
         </button>
 
-        <button className='flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200' onClick={()=>{setview('edit')}}>
-          <Edit size={18} />
-          <span>Edit My Ad</span>
-        </button>
+       
 
         <button className='flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200' onClick={()=>{setview('create')}}>
           <PlusCircle size={18} />
           <span>Create New Ad</span>
+        </button>
+
+        <button className='flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200' onClick={()=>{setview('orders')}}>
+          <ClipboardList size={18} />
+          <span>Manage orders</span>
         </button>
 
       </div>
