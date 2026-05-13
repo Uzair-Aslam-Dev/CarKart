@@ -120,4 +120,5 @@ db.query('SELECT 1')
     .then(() => console.log('Database connected successfully'))
     .catch((err) => console.log('Database connection failed:', err.message));
 
+
 module.exports=app;

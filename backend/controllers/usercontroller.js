@@ -693,6 +693,137 @@ const getuserWishlist = async (req,res) => {
      
 }
 
+const getStats = async (req, res) => {
+    try {
+        const [[{ total_users }]] = await db.query(`SELECT COUNT(*) as total_users FROM users WHERE role != 'admin'`);
+        const [[{ active_users }]] = await db.query(`SELECT COUNT(*) as active_users FROM users WHERE role != 'admin'`);
+        const [[{ total_listings }]] = await db.query(`SELECT COUNT(*) as total_listings FROM listings`);
+        const [[{ active_listings }]] = await db.query(`SELECT COUNT(*) as active_listings FROM listings WHERE status = 'active'`);
+        const [[{ total_orders }]] = await db.query(`SELECT COUNT(*) as total_orders FROM orders`);
+        const [[{ total_revenue }]] = await db.query(`SELECT SUM(total_price) as total_revenue FROM orders WHERE status = 'completed'`);
+
+        res.json({ total_users, active_users, total_listings, active_listings, total_orders, total_revenue: total_revenue || 0 });
+    } catch (err) {
+        console.error('Stats error:', err);
+        res.status(500).json({ message: err.message });
+    }
+}
+
+const getAllUsers = async (req, res) => {
+    try {
+        const [users] = await db.query(
+            `SELECT user_id, username, full_name, email, phone, city, role, created_at 
+             FROM users WHERE role != 'admin' ORDER BY created_at DESC`
+        );
+        res.json({ users });
+    } catch (err) {
+        console.error('getAllUsers error:', err);
+        res.status(500).json({ message: err.message });
+    }
+}
+
+const getAllListings = async (req, res) => {
+    try {
+        const [listings] = await db.query(
+            `SELECT l.listing_id, l.price, l.status, l.created_at,
+                    v.vehicle_id, v.brand, v.model, v.year, v.city, v.condition,
+                    u.username as seller_name,
+                    (SELECT image_url FROM vehicle_images WHERE vehicle_id = v.vehicle_id LIMIT 1) as image_url
+             FROM listings l
+             JOIN vehicles v ON l.vehicle_id = v.vehicle_id
+             JOIN users u ON v.seller_id = u.user_id
+             ORDER BY l.created_at DESC`
+        );
+        res.json({ listings });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+
+const toggleListingStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [[listing]] = await db.query(`SELECT status FROM listings WHERE listing_id = ?`, [id]);
+        if (!listing) return res.status(404).json({ message: 'Listing not found' });
+
+        const newStatus = listing.status === 'inactive' ? 'active' : 'inactive';
+        await db.query(`UPDATE listings SET status = ? WHERE listing_id = ?`, [newStatus, id]);
+        res.json({ message: `Listing ${newStatus}`, status: newStatus });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+
+const getAllOrders = async (req, res) => {
+    try {
+        const [orders] = await db.query(
+            `SELECT o.order_id, o.total_price, o.status, o.created_at,
+                    v.brand, v.model, v.year,
+                    buyer.username as buyer_name,
+                    seller.username as seller_name
+             FROM orders o
+             JOIN listings l ON o.listing_id = l.listing_id
+             JOIN vehicles v ON l.vehicle_id = v.vehicle_id
+             JOIN users buyer ON o.buyer_id = buyer.user_id
+             JOIN users seller ON v.seller_id = seller.user_id
+             ORDER BY o.created_at DESC`
+        );
+        res.json({ orders });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+
+const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const [[user]] = await db.query(`SELECT role FROM users WHERE user_id = ?`, [id]);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (user.role === 'admin') return res.status(403).json({ message: 'Cannot delete admin' });
+
+        // get all vehicles belonging to this user (as seller)
+        const [vehicles] = await db.query(`SELECT vehicle_id FROM vehicles WHERE seller_id = ?`, [id]);
+
+        for (const vehicle of vehicles) {
+            const vid = vehicle.vehicle_id;
+
+            const [listings] = await db.query(`SELECT listing_id FROM listings WHERE vehicle_id = ?`, [vid]);
+
+            for (const listing of listings) {
+                const lid = listing.listing_id;
+
+                const [orders] = await db.query(`SELECT order_id FROM orders WHERE listing_id = ?`, [lid]);
+                for (const order of orders) {
+                    await db.query(`DELETE FROM order_history WHERE order_id = ?`, [order.order_id]);
+                }
+                await db.query(`DELETE FROM orders WHERE listing_id = ?`, [lid]);
+                await db.query(`DELETE FROM wishlist WHERE listing_id = ?`, [lid]);
+            }
+
+            await db.query(`DELETE FROM listings WHERE vehicle_id = ?`, [vid]);
+            await db.query(`DELETE FROM vehicle_images WHERE vehicle_id = ?`, [vid]);
+        }
+
+        await db.query(`DELETE FROM vehicles WHERE seller_id = ?`, [id]);
+
+        // delete orders placed by this user (as buyer)
+        const [buyerOrders] = await db.query(`SELECT order_id FROM orders WHERE buyer_id = ?`, [id]);
+        for (const order of buyerOrders) {
+            await db.query(`DELETE FROM order_history WHERE order_id = ?`, [order.order_id]);
+        }
+        await db.query(`DELETE FROM orders WHERE buyer_id = ?`, [id]);
+        await db.query(`DELETE FROM wishlist WHERE user_id = ?`, [id]);
+
+        await db.query(`DELETE FROM users WHERE user_id = ?`, [id]);
+
+        res.json({ message: 'User and all related data deleted successfully' });
+    } catch (err) {
+        console.error('deleteUser error:', err);
+        res.status(500).json({ message: err.message });
+    }
+}
+
 module.exports = {
   sign,
   login,
@@ -711,4 +842,10 @@ module.exports = {
   orderVehicle,
   addtoWishlist,
   getuserWishlist,
+  getStats,
+  getAllUsers,
+  getAllListings,
+  toggleListingStatus,
+  getAllOrders,
+  deleteUser
 }

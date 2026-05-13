@@ -1,5 +1,6 @@
 const express = require('express');
 const validate = require('../middlewares/validate');
+const isAdmin = require('../middlewares/isAdmin');
 const {param , query , body, check} = require('express-validator');
 const {
   sign,
@@ -19,6 +20,12 @@ const {
   orderVehicle,
   addtoWishlist,
   getuserWishlist,
+  getStats,
+  getAllUsers, 
+  deleteUser, 
+  getAllListings, 
+  toggleListingStatus, 
+  getAllOrders
 } = require('../controllers/usercontroller')
 const validateSession  = require('../middlewares/sessionvalidate')
 
@@ -69,5 +76,16 @@ router.post('/orderVehicle', validateSession, orderVehicle);
 router.post('/wishlist',validateSession, addtoWishlist);
 router.get('/my-wishlist',validateSession, getuserWishlist);
 
+
 router.post('/addvehicle' , validateSession, upload.array('vehicle_images',5), addCar );
+
+//admin routes
+router.get('/stats', isAdmin, getStats);
+router.get('/users', isAdmin, getAllUsers);
+router.delete('/users/:id', isAdmin, deleteUser);
+router.get('/listings', isAdmin, getAllListings);
+router.put('/listings/:id/toggle', isAdmin, toggleListingStatus);
+router.get('/adminorders', isAdmin, getAllOrders);
+
+
 module.exports = router;
