@@ -18,7 +18,7 @@ function Navbar() {
         />
         </Link>
         <Link href={'/'}>
-        <h2 className="font-bold text-xl lg:text-2xl cursor-pointer">AutoMarket</h2>
+        <h2 className="font-bold text-xl lg:text-2xl cursor-pointer">CarKart</h2>
         </Link>
       </div>
 
